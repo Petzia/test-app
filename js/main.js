@@ -1,11 +1,11 @@
 import { natalChart } from './modules/chart.js';
 import { localToUtc } from './modules/time.js';
 import { loadProfiles, saveProfiles, clearProfiles } from './modules/profiles.js';
-import { renderToday, renderNatal, renderSky, renderCompat } from './modules/views.js';
+import { renderToday, renderNatal, renderDestiny, renderSky, renderCompat } from './modules/views.js';
 import { openProfileForm } from './modules/form.js';
 import { el } from './modules/dom.js';
 
-const TABS = ['today', 'natal', 'sky', 'compat'];
+const TABS = ['today', 'natal', 'destiny', 'sky', 'compat'];
 const ui = {
   main: document.getElementById('view'),
   tabs: [...document.querySelectorAll('[data-tab]')],
@@ -64,6 +64,8 @@ function render() {
     });
   } else if (state.tab === 'natal') {
     renderNatal(ui.main, profile, chart, birth);
+  } else if (state.tab === 'destiny') {
+    renderDestiny(ui.main, profile, chart, birth);
   } else if (state.tab === 'sky') {
     renderSky(ui.main);
   } else {

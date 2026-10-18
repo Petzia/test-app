@@ -321,6 +321,8 @@ th { color: var(--muted); font-weight: 400; font-size: 0.85rem; }
   background: conic-gradient(var(--gold) calc(var(--score) * 1%), var(--border) 0);
 }
 
+.life-path { --score: 100; }
+
 .score-ring span {
   width: 76px;
   height: 76px;

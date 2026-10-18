@@ -8,6 +8,8 @@ import {
 } from '../js/modules/chart.js';
 import { validateProfile, loadProfiles, DEFAULT_PROFILES } from '../js/modules/profiles.js';
 import { parseResults } from '../js/modules/geocode.js';
+import { northNode, lifePathNumber } from '../js/modules/destiny.js';
+import { NODE_SIGN_TEXT, LIFE_PATH_TEXT, MC_CAREER } from '../js/modules/destinyTexts.js';
 
 const chartOf = (p) => natalChart({
   ...localToUtc(p.date, p.time, p.timeZone), latitude: p.latitude, longitude: p.longitude, timeKnown: true,
@@ -138,4 +140,28 @@ test('parseResults keeps only well-formed places', () => {
   assert.equal(results.length, 1);
   assert.equal(results[0].label, 'Lausanne, Vaud, Suisse');
   assert.deepEqual(parseResults(null), []);
+});
+
+test('mean North Node matches known positions', () => {
+  // The North Node was in Capricorn in April 1992 and in Sagittarius in October 1993.
+  assert.equal(northNode(new Date('1992-04-13T00:24:00Z')).sign, 9);
+  assert.equal(northNode(new Date('1993-10-27T08:43:00Z')).sign, 8);
+  // Retrograde motion: about −19.3° per year.
+  const a = northNode(new Date('2000-01-01T00:00:00Z')).lon;
+  const b = northNode(new Date('2001-01-01T00:00:00Z')).lon;
+  assert.ok(Math.abs(((a - b + 360) % 360) - 19.35) < 0.1);
+});
+
+test('lifePathNumber reduces digits and keeps master numbers', () => {
+  assert.equal(lifePathNumber('1992-04-13'), 11);
+  assert.equal(lifePathNumber('1993-10-27'), 5);
+  assert.equal(lifePathNumber('2000-01-01'), 4);
+  assert.equal(lifePathNumber('1989-12-29'), 5); // 41 → 5
+  assert.equal(lifePathNumber('1975-09-25'), 11); // 38 → 11 (master number kept)
+});
+
+test('destiny texts cover every case', () => {
+  assert.equal(NODE_SIGN_TEXT.length, 12);
+  assert.equal(MC_CAREER.length, 12);
+  for (const n of [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33]) assert.ok(LIFE_PATH_TEXT[n]);
 });
