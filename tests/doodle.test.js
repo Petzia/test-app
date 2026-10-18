@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { WORLD, createGame, step, wrapX, landsOn } from '../js/modules/game.js';
+import { WORLD, createGame, step, wrapX, landsOn } from '../doodle/js/game.js';
 
 const seeded = (seed = 1) => () => {
   seed = (seed * 16807) % 2147483647;
