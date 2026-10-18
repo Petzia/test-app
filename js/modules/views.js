@@ -11,19 +11,19 @@ import {
 import { chartWheel } from './wheel.js';
 import { formatOffset } from './time.js';
 
-const DAY_MS = 86400000;
 const dateFormat = new Intl.DateTimeFormat('fr-CH', { weekday: 'long', day: 'numeric', month: 'long' });
 const shortDate = new Intl.DateTimeFormat('fr-CH', { day: 'numeric', month: 'short' });
 
 const signLabel = (sign) => `${SIGN_GLYPHS[sign]} ${SIGNS[sign]}`;
 const card = (title, children, className = '') => el('section', { className: `card ${className}` }, [
-  title ? el('h2', { text: title }) : null, ...children,
+  title ? el('h2', { text: title, tabindex: '-1' }) : null, ...children,
 ]);
 
 function noonToday(offsetDays = 0) {
   const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
   d.setHours(12, 0, 0, 0);
-  return new Date(d.getTime() + offsetDays * DAY_MS);
+  return d;
 }
 
 function bigThree(chart) {
@@ -70,11 +70,11 @@ export function renderToday(container, profile, chart, dayOffset, onDayChange) {
   const list = transits(chart, date).slice(0, 4);
   const retro = sky.filter((p) => p.retrograde);
 
-  const days = el('div', { className: 'day-picker', role: 'tablist', 'aria-label': 'Choisir le jour' },
+  const days = el('div', { className: 'day-picker', role: 'group', 'aria-label': 'Choisir le jour' },
     Array.from({ length: 7 }, (_, i) => {
       const label = i === 0 ? 'Aujourd’hui' : i === 1 ? 'Demain' : shortDate.format(noonToday(i));
       return el('button', {
-        type: 'button', role: 'tab', 'aria-selected': String(i === dayOffset),
+        type: 'button', 'aria-pressed': String(i === dayOffset),
         className: i === dayOffset ? 'chip active' : 'chip', text: label, onClick: () => onDayChange(i),
       });
     }));
@@ -206,12 +206,16 @@ export function renderCompat(container, profiles, charts, selection, onSelect) {
   }));
   const pickers = el('div', { className: 'pickers' }, [select(ia, 0), el('span', { text: '♡' }), select(ib, 1)]);
 
+  if (profiles.length < 2) {
+    container.replaceChildren(card('Compatibilité', [el('p', { text: 'Ajoute un deuxième profil avec le bouton ＋ pour calculer votre compatibilité.' })]));
+    return;
+  }
   if (ia === ib) {
     container.replaceChildren(pickers, card('', [el('p', { text: 'Choisis deux profils différents.' })]));
     return;
   }
   const result = synastry(charts[ia], charts[ib]);
-  const [nameA, nameB] = [profiles[ia].name.split(' ·')[0], profiles[ib].name.split(' ·')[0]];
+  const [nameA, nameB] = [profiles[ia].name, profiles[ib].name];
   const ring = el('div', { className: 'score-ring', role: 'img', 'aria-label': `Score ${result.score} sur 100` }, [
     el('span', { text: String(result.score) }),
   ]);
@@ -230,8 +234,9 @@ export function renderCompat(container, profiles, charts, selection, onSelect) {
       elementLine(charts[ia], nameA),
       elementLine(charts[ib], nameB),
     ], 'hero'),
-    card('Ce qui vous unit', [el('ul', { className: 'transits' },
-      result.harmonious.slice(0, 5).map((l) => linkItem(l, nameA, nameB)))]),
+    card('Ce qui vous unit', [result.harmonious.length
+      ? el('ul', { className: 'transits' }, result.harmonious.slice(0, 5).map((l) => linkItem(l, nameA, nameB)))
+      : el('p', { text: 'Peu de liens faciles : votre relation se construit dans l’effort… et c’est aussi une force.' })]),
     result.challenging.length ? card('Vos points de friction', [el('ul', { className: 'transits' },
       result.challenging.slice(0, 3).map((l) => linkItem(l, nameA, nameB)))]) : null,
     el('p', { className: 'muted small', text: 'Score basé sur les aspects entre vos planètes personnelles, pondérés par leur importance et leur précision.' }),

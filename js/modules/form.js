@@ -70,6 +70,11 @@ export function openProfileForm(dialog, profile, { onSave, onDelete }) {
     ]),
   ]);
 
+  // Typing a new place or coordinates invalidates the previously chosen search result.
+  for (const input of [query, lat, lon]) input.addEventListener('input', () => {
+    place = null;
+    showChosen();
+  });
   query.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -83,7 +88,7 @@ export function openProfileForm(dialog, profile, { onSave, onDelete }) {
       name: name.value,
       date: date.value,
       time: time.value || null,
-      place: place?.label ?? query.value,
+      place: place?.label ?? (query.value.trim() || 'Lieu personnalisé'),
       latitude: Number.parseFloat(lat.value),
       longitude: Number.parseFloat(lon.value),
       timeZone: tz.value.trim(),

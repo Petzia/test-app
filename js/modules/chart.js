@@ -43,12 +43,9 @@ export const elementOf = (sign) => ELEMENTS[sign % 4];
 // 23.5° → "23°30'"
 export function formatDegree(lon) {
   const inSign = normalize(lon) % 30;
-  let d = Math.floor(inSign);
-  let m = Math.round((inSign - d) * 60);
-  if (m === 60) {
-    d += 1;
-    m = 0;
-  }
+  const totalMinutes = Math.min(Math.round(inSign * 60), 30 * 60 - 1);
+  const d = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
   return `${d}°${String(m).padStart(2, '0')}'`;
 }
 

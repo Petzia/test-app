@@ -7,11 +7,11 @@ const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export const DEFAULT_PROFILES = [
   {
-    id: 'p1', name: 'Exemple · 13 avril 1992', date: '1992-04-13', time: '02:24',
+    id: 'p1', name: 'Exemple', date: '1992-04-13', time: '02:24',
     place: 'La Chaux-de-Fonds, Suisse', latitude: 47.0999, longitude: 6.8259, timeZone: 'Europe/Zurich',
   },
   {
-    id: 'p2', name: 'Moi · 27 octobre 1993', date: '1993-10-27', time: '09:43',
+    id: 'p2', name: 'Moi', date: '1993-10-27', time: '09:43',
     place: 'Lausanne, Suisse', latitude: 46.516, longitude: 6.6328, timeZone: 'Europe/Zurich',
   },
 ];
@@ -35,7 +35,9 @@ export function validateProfile(raw) {
   if (time !== null && !(typeof time === 'string' && TIME_RE.test(time))) return null;
   if (!isNumberIn(raw.latitude, -66, 66) || !isNumberIn(raw.longitude, -180, 180)) return null;
   if (typeof raw.timeZone !== 'string' || !isValidTimeZone(raw.timeZone)) return null;
-  const id = typeof raw.id === 'string' && /^[\w-]{1,40}$/.test(raw.id) ? raw.id : `p${Date.now()}`;
+  const id = typeof raw.id === 'string' && /^[\w-]{1,40}$/.test(raw.id)
+    ? raw.id
+    : `p${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   return {
     id, name, date: raw.date, time,
     place: cleanText(raw.place, 80),

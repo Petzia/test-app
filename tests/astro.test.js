@@ -28,6 +28,7 @@ test('sign and degree helpers', () => {
   assert.equal(signIndex(359.9), 11);
   assert.equal(signIndex(-1), 11);
   assert.equal(formatDegree(23.5), "23°30'");
+  assert.equal(formatDegree(29.9999), "29°59'");
   assert.equal(separation(350, 10), 20);
 });
 
