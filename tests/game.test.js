@@ -54,3 +54,19 @@ test('climbing scrolls the world and increases the score', () => {
   assert.ok(state.score > 0);
   assert.ok(state.platforms.some((p) => p.y < 0));
 });
+
+test('moving platforms bounce off the walls', () => {
+  const state = createGame(seeded());
+  state.platforms = [{ x: WORLD.width - WORLD.platformWidth - 1, y: 300, vx: 80 }];
+  state.player = { x: 0, y: 500, vy: 0 };
+  step(state, 0, 1 / 10, seeded());
+  assert.ok(state.platforms[0].vx < 0);
+  assert.ok(state.platforms[0].x + WORLD.platformWidth <= WORLD.width);
+});
+
+test('generated platforms stay inside the world', () => {
+  const state = createGame(seeded(42));
+  for (const p of state.platforms) {
+    assert.ok(p.x >= 0 && p.x <= WORLD.width - WORLD.platformWidth);
+  }
+});

@@ -19,7 +19,7 @@ export function createPlatform(x, y, rand = Math.random) {
 
 export function createGame(rand = Math.random) {
   const platforms = [];
-  // Wide starting platform under the player, then random ones going up.
+  // Starting platform under the player, then random ones going up.
   platforms.push({ x: WORLD.width / 2 - WORLD.platformWidth / 2, y: WORLD.height - 40, vx: 0 });
   for (let y = WORLD.height - 40 - WORLD.platformGap; y > -WORLD.platformGap; y -= WORLD.platformGap) {
     platforms.push(createPlatform(rand() * (WORLD.width - WORLD.platformWidth), y, rand));
@@ -70,7 +70,7 @@ function scrollWorld(state, rand) {
   state.score = Math.floor(state.climbed / 10);
   for (const p of state.platforms) p.y += shift;
   state.platforms = state.platforms.filter((p) => p.y < WORLD.height);
-  let topY = Math.min(...state.platforms.map((p) => p.y));
+  let topY = state.platforms.length ? Math.min(...state.platforms.map((p) => p.y)) : WORLD.height;
   while (topY > -WORLD.platformGap) {
     topY -= WORLD.platformGap;
     state.platforms.push(createPlatform(rand() * (WORLD.width - WORLD.platformWidth), topY, rand));

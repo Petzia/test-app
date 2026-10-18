@@ -3,12 +3,19 @@ export function createInput(target) {
   const keys = { left: false, right: false };
   let touchDir = 0;
 
+  // event.code is layout-independent: KeyA is Q on AZERTY keyboards.
   const setKey = (event, pressed) => {
-    if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'q') keys.left = pressed;
-    if (event.key === 'ArrowRight' || event.key === 'd') keys.right = pressed;
+    if (event.code === 'ArrowLeft' || event.code === 'KeyA') keys.left = pressed;
+    else if (event.code === 'ArrowRight' || event.code === 'KeyD') keys.right = pressed;
+    else return;
+    event.preventDefault();
   };
   window.addEventListener('keydown', (e) => setKey(e, true));
   window.addEventListener('keyup', (e) => setKey(e, false));
+  window.addEventListener('blur', () => {
+    keys.left = false;
+    keys.right = false;
+  });
 
   const onTouch = (event) => {
     const touch = event.touches[0];

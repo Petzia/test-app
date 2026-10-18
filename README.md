@@ -5,7 +5,7 @@ Bounce from platform to platform and climb as high as you can. Blue platforms mo
 
 ## Controls
 
-- Keyboard: `←` / `→` (or `A` / `D`, `Q` for AZERTY)
+- Keyboard: `←` / `→` (or `A` / `D`; `Q` / `D` on AZERTY)
 - Mobile: touch the left or right half of the game area
 
 ## Run locally
