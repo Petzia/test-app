@@ -1,18 +1,33 @@
-# projects-template
+# Doodle Jump Lite
 
-Starter template for small web projects built with Claude Code.
+A tiny Doodle Jump–like game in vanilla JavaScript (canvas, ES modules, no dependencies).
+Bounce from platform to platform and climb as high as you can. Blue platforms move.
 
-## What's inside
+## Controls
 
-- `CLAUDE.md` — project rules Claude Code follows in every session
-  (vanilla JS, no heavy frameworks, security rules, workflow).
-- `.claude/agents/idea-challenger.md` — optionally challenges an idea before building.
-- `.claude/agents/security-reviewer.md` — reviews code for security issues.
-- `.claude/agents/quality-reviewer.md` — reviews code quality and tests.
+- Keyboard: `←` / `→` (or `A` / `D`; `Q` / `D` on AZERTY)
+- Mobile: touch the left or right half of the game area
 
-## Usage
+## Run locally
 
-1. On GitHub, click **Use this template** to create a new repository.
-2. Open a Claude Code session on it (desktop, web or mobile) and describe your idea.
-3. Prefix with `quick:` to skip the challenge question, or `challenge:` to go straight to it.
-4. Claude builds the app on a branch and opens a Pull Request for you to review and merge.
+```sh
+python3 -m http.server 8000   # or: npx serve
+```
+
+Then open http://localhost:8000.
+
+## Tests
+
+```sh
+npm test   # runs node --test, no install needed
+```
+
+## Deployment
+
+Every push to `main` runs the tests and deploys the site to GitHub Pages
+(`.github/workflows/pages.yml`). One-time setup: in the repository
+**Settings → Pages**, set **Source** to **GitHub Actions**.
+
+## Project rules
+
+See `CLAUDE.md` and the agents in `.claude/agents/`.
