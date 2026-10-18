@@ -10,6 +10,10 @@ import {
 } from './texts.js';
 import { chartWheel } from './wheel.js';
 import { formatOffset } from './time.js';
+import { northNode, lifePathNumber } from './destiny.js';
+import {
+  NODE_SIGN_TEXT, NODE_HOUSE_TEXT, LIFE_PATH_TEXT, MC_CAREER, SUN_TALENT, ELEMENT_WORK, PLANET_IN_10TH,
+} from './destinyTexts.js';
 
 const dateFormat = new Intl.DateTimeFormat('fr-CH', { weekday: 'long', day: 'numeric', month: 'long' });
 const shortDate = new Intl.DateTimeFormat('fr-CH', { day: 'numeric', month: 'short' });
@@ -105,12 +109,23 @@ function planetRow(p) {
   ]);
 }
 
-function elementBalance(chart) {
+// Sun, Moon and Ascendant count double.
+function elementCounts(chart) {
   const counts = { feu: 0, terre: 0, air: 0, eau: 0 };
   const points = chart.angles ? [...chart.planets, chart.angles[0]] : chart.planets;
   for (const p of points) counts[elementOf(p.sign)] += ['sun', 'moon', 'asc'].includes(p.key) ? 2 : 1;
+  return counts;
+}
+
+function dominantElement(chart) {
+  const counts = elementCounts(chart);
+  return ELEMENTS.reduce((a, b) => (counts[b] > counts[a] ? b : a));
+}
+
+function elementBalance(chart) {
+  const counts = elementCounts(chart);
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
-  const dominant = ELEMENTS.reduce((a, b) => (counts[b] > counts[a] ? b : a));
+  const dominant = dominantElement(chart);
   return el('div', {}, [
     el('div', { className: 'bars' }, ELEMENTS.map((e) => {
       const bar = el('span', { className: `bar-fill el-${e}` });
@@ -240,5 +255,50 @@ export function renderCompat(container, profiles, charts, selection, onSelect) {
     result.challenging.length ? card('Vos points de friction', [el('ul', { className: 'transits' },
       result.challenging.slice(0, 3).map((l) => linkItem(l, nameA, nameB)))]) : null,
     el('p', { className: 'muted small', text: 'Score basé sur les aspects entre vos planètes personnelles, pondérés par leur importance et leur précision.' }),
+  );
+}
+
+
+export function renderDestiny(container, profile, chart, birth) {
+  const node = northNode(birth.utc);
+  const nodeHouse = chart.ascSign !== null ? ((node.sign - chart.ascSign + 12) % 12) + 1 : null;
+  const lifePath = lifePathNumber(profile.date);
+  const path = LIFE_PATH_TEXT[lifePath];
+  const sun = chart.planets[0];
+  const mc = chart.angles ? chart.angles[1] : null;
+  const tenth = chart.planets.filter((p) => p.house === 10);
+
+  const careerCard = mc
+    ? card('Vocation et carrière', [
+      el('p', { className: 'mini-label', text: `Milieu du Ciel en ${signLabel(mc.sign)}` }),
+      el('p', { className: 'lead', text: MC_CAREER[mc.sign].vocation }),
+      el('p', {}, [el('strong', { text: 'Métiers qui te correspondent : ' }), MC_CAREER[mc.sign].jobs, '.']),
+      el('p', { text: `Tes talents naturels (Soleil en ${SIGNS[sun.sign]}) : ${SUN_TALENT[sun.sign]}.` }),
+      el('p', { text: ELEMENT_WORK[dominantElement(chart)] }),
+      tenth.length ? el('ul', { className: 'plain' }, tenth.map((p) => el('li', { text: PLANET_IN_10TH[p.key] }))) : null,
+    ])
+    : card('Vocation et carrière', [
+      el('p', { text: `Tes talents naturels (Soleil en ${SIGNS[sun.sign]}) : ${SUN_TALENT[sun.sign]}.` }),
+      el('p', { text: ELEMENT_WORK[dominantElement(chart)] }),
+      el('p', { className: 'muted', text: 'Ajoute ton heure de naissance pour découvrir ton Milieu du Ciel et les métiers qui te correspondent.' }),
+    ]);
+
+  container.replaceChildren(
+    card(`Destinée — ${profile.name}`, [
+      el('p', { className: 'mini-label', text: `${node.glyph} Nœud Nord en ${signLabel(node.sign)} ${formatDegree(node.lon)}${nodeHouse ? ` · maison ${nodeHouse}` : ''}` }),
+      el('p', { className: 'lead', text: 'Ta mission de vie' }),
+      el('p', { text: NODE_SIGN_TEXT[node.sign] }),
+      nodeHouse ? el('p', { text: NODE_HOUSE_TEXT[nodeHouse - 1] }) : null,
+      el('p', { className: 'muted small', text: 'En astrologie, le Nœud Nord indique la direction vers laquelle ton âme est appelée à grandir.' }),
+    ], 'hero'),
+    card('Chemin de vie (numérologie)', [
+      el('div', { className: 'score' }, [
+        el('div', { className: 'score-ring life-path', role: 'img', 'aria-label': `Chemin de vie ${lifePath}` }, [el('span', { text: String(lifePath) })]),
+        el('p', { className: 'lead', text: path.title }),
+      ]),
+      el('p', { text: path.text }),
+      el('p', { className: 'muted small', text: 'Calculé en additionnant tous les chiffres de ta date de naissance.' }),
+    ]),
+    careerCard,
   );
 }

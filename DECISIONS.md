@@ -38,3 +38,12 @@
 - **Privacy**: profiles live in `localStorage` only, with an "Effacer mes données" button.
   The two example profiles (given by the user) are hard-coded as defaults.
 - **Doodle Jump moved to `/doodle/`**, linked from Céleste's footer.
+
+## Céleste — "Destinée" tab
+
+- **Life mission = mean North Node** (Meeus formula) by sign and Whole Sign house: the usual
+  "destiny" point in modern astrology. Mean (not true) node: simpler, within ~1.5° of the true node.
+- **Numerology life path number** (sum of all birth date digits, master numbers 11/22/33 kept):
+  popular, easy to explain, and works without a birth time.
+- **Career** from the Midheaven sign (vocation + job ideas), Sun sign talents, dominant element and
+  planets in the 10th house. Without a birth time, only the Sun and element parts are shown.
