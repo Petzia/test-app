@@ -1,26 +1,38 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
-  <title>Doodle Jump Lite</title>
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src https://geocoding-api.open-meteo.com; base-uri 'none'; form-action 'none'">
+  <meta name="description" content="Céleste : ton thème astral, tes transits du jour et votre compatibilité.">
+  <title>Céleste — astrologie</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <main>
-    <h1>Doodle Jump Lite</h1>
-    <p class="hud">Score: <span id="score">0</span> · Best: <span id="best">0</span></p>
-    <div class="stage">
-      <canvas id="game" tabindex="0" role="img" aria-label="Game area: use the left and right arrow keys, or tap the left or right half on mobile"></canvas>
-      <div id="overlay" class="overlay">
-        <p id="overlay-text">Jump from platform to platform. Don't fall!</p>
-        <button id="start" type="button">Play</button>
-      </div>
+  <div class="stars" aria-hidden="true"></div>
+  <header class="top">
+    <h1><span aria-hidden="true">✦</span> Céleste</h1>
+    <div class="profile-bar">
+      <label class="sr-only" for="profile">Profil</label>
+      <select id="profile"></select>
+      <button id="edit-profile" type="button" class="secondary">Modifier</button>
+      <button id="add-profile" type="button" class="secondary" aria-label="Ajouter un profil">＋</button>
     </div>
-    <p class="help">← → or A / D (Q / D on AZERTY) to move · tap left / right on mobile</p>
-  </main>
+    <nav class="tabs" aria-label="Sections">
+      <button type="button" data-tab="today">Aujourd’hui</button>
+      <button type="button" data-tab="natal">Thème natal</button>
+      <button type="button" data-tab="sky">Le ciel</button>
+      <button type="button" data-tab="compat">Compatibilité</button>
+    </nav>
+  </header>
+  <main id="view"></main>
+  <footer>
+    <p>Zodiaque tropical, maisons signes entiers. Calculs astronomiques avec astronomy-engine, directement dans ton navigateur.</p>
+    <p>Tes données de naissance restent sur cet appareil. <button id="reset" type="button" class="link">Effacer mes données</button></p>
+    <p><a href="doodle/">🎮 Jouer à Doodle Jump Lite</a></p>
+  </footer>
+  <dialog id="profile-dialog" aria-label="Profil"></dialog>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

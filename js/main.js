@@ -1,82 +1,129 @@
-import { WORLD, createGame, step } from './modules/game.js';
-import { render } from './modules/renderer.js';
-import { createInput } from './modules/input.js';
+import { natalChart } from './modules/chart.js';
+import { localToUtc } from './modules/time.js';
+import { loadProfiles, saveProfiles, clearProfiles } from './modules/profiles.js';
+import { renderToday, renderNatal, renderSky, renderCompat } from './modules/views.js';
+import { openProfileForm } from './modules/form.js';
+import { el } from './modules/dom.js';
 
-const BEST_KEY = 'doodle-best';
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
-const scoreEl = document.getElementById('score');
-const bestEl = document.getElementById('best');
-const overlay = document.getElementById('overlay');
-const overlayText = document.getElementById('overlay-text');
-const startBtn = document.getElementById('start');
+const TABS = ['today', 'natal', 'sky', 'compat'];
+const ui = {
+  main: document.getElementById('view'),
+  tabs: [...document.querySelectorAll('[data-tab]')],
+  profileSelect: document.getElementById('profile'),
+  editBtn: document.getElementById('edit-profile'),
+  addBtn: document.getElementById('add-profile'),
+  resetBtn: document.getElementById('reset'),
+  dialog: document.getElementById('profile-dialog'),
+};
 
-canvas.width = WORLD.width;
-canvas.height = WORLD.height;
+const state = {
+  profiles: loadProfiles(),
+  current: 0,
+  tab: 'today',
+  dayOffset: 0,
+  compat: [0, 0],
+};
+const defaultCompat = () => [0, Math.min(1, state.profiles.length - 1)];
+state.compat = defaultCompat();
 
-const input = createInput(canvas);
-let state = createGame();
-let running = false;
-let lastTime = 0;
+function birthOf(profile) {
+  const { utc, offsetMinutes } = localToUtc(profile.date, profile.time ?? '12:00', profile.timeZone);
+  return { utc, offsetMinutes, latitude: profile.latitude, longitude: profile.longitude, timeKnown: profile.time !== null };
+}
 
-function readBest() {
-  try {
-    const value = Number.parseInt(localStorage.getItem(BEST_KEY) ?? '0', 10);
-    return Number.isFinite(value) && value > 0 ? value : 0;
-  } catch {
-    return 0;
+const chartCache = new Map();
+function chartOf(profile) {
+  const key = JSON.stringify(profile);
+  if (!chartCache.has(key)) {
+    const birth = birthOf(profile);
+    chartCache.set(key, { birth, chart: natalChart(birth) });
+  }
+  return chartCache.get(key);
+}
+
+function renderProfileSelect() {
+  ui.profileSelect.replaceChildren(...state.profiles.map((p, i) => {
+    const option = el('option', { value: String(i), text: p.name });
+    option.selected = i === state.current;
+    return option;
+  }));
+}
+
+function render() {
+  for (const tab of ui.tabs) {
+    const active = tab.dataset.tab === state.tab;
+    tab.setAttribute('aria-pressed', String(active));
+    tab.classList.toggle('active', active);
+  }
+  const profile = state.profiles[state.current];
+  const { chart, birth } = chartOf(profile);
+  if (state.tab === 'today') {
+    renderToday(ui.main, profile, chart, state.dayOffset, (offset) => {
+      state.dayOffset = offset;
+      render();
+    });
+  } else if (state.tab === 'natal') {
+    renderNatal(ui.main, profile, chart, birth);
+  } else if (state.tab === 'sky') {
+    renderSky(ui.main);
+  } else {
+    const charts = state.profiles.map((p) => chartOf(p).chart);
+    renderCompat(ui.main, state.profiles, charts, state.compat, (index, value) => {
+      state.compat[index] = value;
+      render();
+    });
   }
 }
 
-function saveBest(value) {
-  try {
-    localStorage.setItem(BEST_KEY, String(value));
-  } catch {
-    // Storage unavailable (private mode): best score just isn't kept.
+function persist() {
+  saveProfiles(state.profiles);
+  state.current = Math.min(state.current, state.profiles.length - 1);
+  state.compat = state.compat.map((i) => Math.min(i, state.profiles.length - 1));
+  renderProfileSelect();
+  render();
+}
+
+function saveProfile(profile) {
+  const index = state.profiles.findIndex((p) => p.id === profile.id);
+  if (index >= 0) {
+    state.profiles[index] = profile;
+    state.current = index;
+  } else {
+    state.profiles.push(profile);
+    state.current = state.profiles.length - 1;
   }
+  persist();
 }
 
-let best = readBest();
-bestEl.textContent = String(best);
-
-function endGame() {
-  running = false;
-  if (state.score > best) {
-    best = state.score;
-    saveBest(best);
-    bestEl.textContent = String(best);
-  }
-  overlayText.textContent = `Game over — score: ${state.score}`;
-  startBtn.textContent = 'Play again';
-  overlay.hidden = false;
-  startBtn.focus();
+function deleteProfile(profile) {
+  if (state.profiles.length <= 1) return;
+  state.profiles = state.profiles.filter((p) => p.id !== profile.id);
+  persist();
 }
 
-function loop(time) {
-  if (!running) return;
-  // Clamp dt so a background tab doesn't teleport the player.
-  const dt = Math.min((time - lastTime) / 1000, 1 / 30);
-  lastTime = time;
-  step(state, input.direction(), dt);
-  render(ctx, state);
-  scoreEl.textContent = String(state.score);
-  if (state.over) {
-    endGame();
-    return;
-  }
-  requestAnimationFrame(loop);
-}
+ui.tabs.forEach((tab) => tab.addEventListener('click', () => {
+  state.tab = TABS.includes(tab.dataset.tab) ? tab.dataset.tab : 'today';
+  render();
+  ui.main.querySelector('h2')?.focus();
+}));
+ui.profileSelect.addEventListener('change', () => {
+  state.current = Number(ui.profileSelect.value);
+  state.dayOffset = 0;
+  render();
+});
+ui.editBtn.addEventListener('click', () => openProfileForm(ui.dialog, state.profiles[state.current], {
+  onSave: saveProfile,
+  onDelete: state.profiles.length > 1 ? deleteProfile : null,
+}));
+ui.addBtn.addEventListener('click', () => openProfileForm(ui.dialog, null, { onSave: saveProfile }));
+ui.resetBtn.addEventListener('click', () => {
+  clearProfiles();
+  state.profiles = loadProfiles();
+  state.current = 0;
+  state.compat = defaultCompat();
+  renderProfileSelect();
+  render();
+});
 
-function start() {
-  state = createGame();
-  overlay.hidden = true;
-  running = true;
-  canvas.focus();
-  requestAnimationFrame((time) => {
-    lastTime = time;
-    requestAnimationFrame(loop);
-  });
-}
-
-startBtn.addEventListener('click', start);
-render(ctx, state);
+renderProfileSelect();
+render();
