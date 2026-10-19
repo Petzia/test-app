@@ -30,19 +30,27 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Network first (to get updates quickly), falling back to the cache when offline.
+const NETWORK_TIMEOUT_MS = 3000;
+
+// Network first (to get updates quickly) with a timeout, falling back to the cache on a slow or
+// missing connection.
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
+  let saved = Promise.resolve();
+  // Clone before the page reads the body, then keep the worker alive until the copy is stored.
+  const network = fetch(request).then((response) => {
+    if (response.ok) {
+      const copy = response.clone();
+      saved = caches.open(CACHE).then((cache) => cache.put(request, copy));
+    }
+    return response;
+  });
+  event.waitUntil(network.then(() => saved).catch(() => {}));
+  const timeout = new Promise((resolve) => setTimeout(resolve, NETWORK_TIMEOUT_MS));
   event.respondWith(
-    fetch(request)
-      .then((response) => {
-        if (response.ok) {
-          const copy = response.clone();
-          caches.open(CACHE).then((cache) => cache.put(request, copy));
-        }
-        return response;
-      })
-      .catch(() => caches.match(request)),
+    Promise.race([network.catch(() => null), timeout])
+      .then((response) => response || caches.match(request))
+      .then((response) => response || network),
   );
 });

@@ -9,7 +9,8 @@ export function createAudio() {
       if (!AudioCtx) return null;
       ctx = new AudioCtx();
     }
-    if (ctx.state === 'suspended') ctx.resume();
+    // iOS uses 'interrupted' after a call or backgrounding.
+    if (ctx.state !== 'running') ctx.resume().catch(() => {});
     return ctx;
   }
 

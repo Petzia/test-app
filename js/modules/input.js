@@ -3,6 +3,8 @@
 // Touch mode: hold the left/right half of the screen to move, tap the top area to shoot.
 const SHOOT_ZONE = 0.25; // top fraction of the screen used for shooting in touch mode
 const TILT_FULL_SPEED_DEG = 22;
+const TILT_DEAD_ZONE_DEG = 2.5;
+const TILT_DETECT_TIMEOUT_MS = 1200;
 
 export function createInput(target) {
   const keys = { left: false, right: false };
@@ -10,8 +12,11 @@ export function createInput(target) {
   const shots = [];
   let tilt = null;
   let tiltEnabled = false;
+  let active = false;
 
   const setKey = (event, pressed) => {
+    // Leave keys alone outside gameplay so Space/Enter still activate focused buttons.
+    if (!active && pressed) return;
     const code = event.code;
     if (code === 'ArrowLeft' || code === 'KeyA') keys.left = pressed;
     else if (code === 'ArrowRight' || code === 'KeyD') keys.right = pressed;
@@ -53,10 +58,16 @@ export function createInput(target) {
   target.addEventListener('touchcancel', endTouch);
   target.addEventListener('mousedown', (event) => shots.push(relative(event)));
 
+  // Left/right tilt angle, whatever way the phone is held.
   const onOrientation = (event) => {
-    if (typeof event.gamma === 'number') tilt = event.gamma;
+    if (typeof event.gamma !== 'number' || typeof event.beta !== 'number') return;
+    const angle = screen.orientation?.angle ?? window.orientation ?? 0;
+    if (angle === 90) tilt = event.beta;
+    else if (angle === -90 || angle === 270) tilt = -event.beta;
+    else tilt = event.gamma;
   };
 
+  // Resolves true only once the sensor actually reports data.
   async function enableTilt() {
     const Orientation = window.DeviceOrientationEvent;
     if (!Orientation) return false;
@@ -69,8 +80,18 @@ export function createInput(target) {
       return false;
     }
     window.addEventListener('deviceorientation', onOrientation);
-    tiltEnabled = true;
-    return true;
+    const works = await new Promise((resolve) => {
+      const started = performance.now();
+      const check = () => {
+        if (tilt !== null) resolve(true);
+        else if (performance.now() - started > TILT_DETECT_TIMEOUT_MS) resolve(false);
+        else setTimeout(check, 50);
+      };
+      check();
+    });
+    if (!works) window.removeEventListener('deviceorientation', onOrientation);
+    tiltEnabled = works;
+    return works;
   }
 
   function disableTilt() {
@@ -82,7 +103,11 @@ export function createInput(target) {
   function direction() {
     const keyDir = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
     if (keyDir) return keyDir;
-    if (tiltEnabled && tilt !== null) return Math.max(-1, Math.min(1, tilt / TILT_FULL_SPEED_DEG));
+    if (tiltEnabled && tilt !== null) {
+      if (Math.abs(tilt) < TILT_DEAD_ZONE_DEG) return 0;
+      const effective = tilt - Math.sign(tilt) * TILT_DEAD_ZONE_DEG;
+      return Math.max(-1, Math.min(1, effective / TILT_FULL_SPEED_DEG));
+    }
     let touchDir = 0;
     for (const point of touches.values()) touchDir += point.x < 0.5 ? -1 : 1;
     return Math.max(-1, Math.min(1, touchDir));
@@ -93,5 +118,13 @@ export function createInput(target) {
     return shots.splice(0, shots.length);
   }
 
-  return { direction, takeShots, enableTilt, disableTilt, isTiltEnabled: () => tiltEnabled };
+  function setActive(value) {
+    active = value;
+    if (!value) {
+      keys.left = false;
+      keys.right = false;
+    }
+  }
+
+  return { direction, takeShots, enableTilt, disableTilt, setActive, isTiltEnabled: () => tiltEnabled };
 }

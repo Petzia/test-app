@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { WIDTH, PLAYER, PLATFORM, JUMP_SPEED, SPRING_SPEED, GRAVITY, ITEMS } from '../js/modules/config.js';
-import { createGame, step, shoot, wrapX, gapRange, difficulty } from '../js/modules/world.js';
+import { WIDTH, PLAYER, PLATFORM, JUMP_SPEED, SPRING_SPEED, TRAMPOLINE_SPEED, GRAVITY, ITEMS } from '../js/modules/config.js';
+import { createGame, step, shoot, wrapX, gapRange, difficulty, playerOffsets } from '../js/modules/world.js';
 
 const HEIGHT = 640;
 const DT = 1 / 120;
@@ -168,4 +168,41 @@ test('a long automatic game never crashes and stays consistent', () => {
   }
   assert.ok(Number.isFinite(state.score));
   assert.ok(state.platforms.length < 200);
+});
+
+test('the wrapped copy of the player lands on edge platforms', () => {
+  const { state, platform } = setup();
+  platform.x = WIDTH - PLATFORM.width; // right edge
+  state.player.x = -20; // copy drawn at WIDTH - 20, over the platform
+  assert.deepEqual(playerOffsets(state.player), [0, WIDTH]);
+  step(state, 0, DT);
+  assert.equal(state.player.vy, -JUMP_SPEED);
+});
+
+test('trampolines launch even higher than springs', () => {
+  const item = { kind: 'trampoline', offset: 10, used: false, usedTime: 0 };
+  const { state } = setup('normal', item);
+  state.player.y = 400 - ITEMS.trampoline.height - PLAYER.height - 2;
+  step(state, 0, DT);
+  assert.equal(state.player.vy, -TRAMPOLINE_SPEED);
+});
+
+test('a flying player kills monsters, and stays safe briefly after the power ends', () => {
+  const { state } = setup();
+  state.platforms = [];
+  const monster = { x: 100, y: 300, baseX: 100, baseY: 300, phase: 0, range: 0, dead: false, vy: 0 };
+  state.monsters = [monster];
+  state.player = { ...state.player, x: 106, y: 320, vy: -900, power: null, grace: 0.5 };
+  step(state, 0, DT);
+  assert.equal(monster.dead, true);
+  assert.equal(state.player.dead, false);
+});
+
+test('power-ups expire and give a grace period', () => {
+  const { state } = setup();
+  state.platforms = [];
+  state.player = { ...state.player, y: 200, power: 'propeller', powerTime: 0.01, grace: 0 };
+  step(state, 0, 0.02);
+  assert.equal(state.player.power, null);
+  assert.ok(state.player.grace > 0);
 });

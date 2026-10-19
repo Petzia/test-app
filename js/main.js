@@ -6,7 +6,7 @@ import { createAudio } from './modules/audio.js';
 import { readNumber, readFlag, write, removeLegacyData } from './modules/storage.js';
 
 const MIN_HEIGHT = 540;
-const MAX_HEIGHT = 820;
+const MAX_HEIGHT = 1000;
 
 const ui = {
   stage: document.getElementById('stage'),
@@ -49,7 +49,7 @@ audio.setMuted(readFlag('muted', false));
 
 function resize() {
   const rect = ui.stage.getBoundingClientRect();
-  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
   app.height = Math.round(Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, (WIDTH * rect.height) / rect.width)));
   app.scale = rect.width / WIDTH;
   ui.canvas.width = Math.round(rect.width * dpr);
@@ -62,6 +62,7 @@ function resize() {
 function show(screen) {
   for (const el of [ui.menu, ui.pauseScreen, ui.over]) el.hidden = el !== screen;
   ui.hud.hidden = screen === ui.menu;
+  input.setActive(screen === null);
 }
 
 function updateControlLabel() {
@@ -108,6 +109,8 @@ function pause() {
 }
 
 function resume() {
+  audio.unlock();
+  input.takeShots();
   app.mode = 'playing';
   show(null);
   app.lastTime = performance.now();

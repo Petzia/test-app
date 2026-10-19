@@ -86,7 +86,7 @@ export function createGame(height, rand = Math.random) {
     nextY: startY - 60,
     player: {
       x: WIDTH / 2 - PLAYER.width / 2, y: startY - PLAYER.height, vx: 0, vy: -JUMP_SPEED,
-      facing: 1, shootTime: 0, cooldown: 0, power: null, powerTime: 0, dead: false,
+      facing: 1, shootTime: 0, cooldown: 0, power: null, powerTime: 0, grace: 0, dead: false,
     },
     platforms: [makePlatform(WIDTH / 2 - PLATFORM.width / 2, startY, 'normal', 0, rand)],
     monsters: [],
@@ -102,9 +102,14 @@ export function createGame(height, rand = Math.random) {
 
 const overlaps = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 
-function feetBox(player) {
-  return { x: player.x + PLAYER.footInset, w: PLAYER.width - PLAYER.footInset * 2 };
+// Horizontal offsets at which the player exists: a second copy while straddling a screen edge.
+export function playerOffsets(player) {
+  if (player.x < 0) return [0, WIDTH];
+  if (player.x + PLAYER.width > WIDTH) return [0, -WIDTH];
+  return [0];
 }
+
+const GRACE_TIME = 0.6; // invulnerability after a power-up ends
 
 function bounce(state, speed, event) {
   state.player.vy = -speed;
@@ -115,9 +120,10 @@ function bounce(state, speed, event) {
 function land(state, prevFeet) {
   const { player } = state;
   const feet = player.y + PLAYER.height;
-  const foot = feetBox(player);
+  const footWidth = PLAYER.width - PLAYER.footInset * 2;
+  const feetX = playerOffsets(player).map((dx) => player.x + dx + PLAYER.footInset);
   const crosses = (top) => prevFeet <= top && feet >= top;
-  const within = (x, w) => foot.x + foot.w > x && foot.x < x + w;
+  const within = (x, w) => feetX.some((fx) => fx + footWidth > x && fx < x + w);
 
   for (const p of state.platforms) {
     if (p.broken || p.gone) continue;
@@ -153,12 +159,13 @@ function land(state, prevFeet) {
 function pickUpPowers(state) {
   const { player } = state;
   if (player.power) return;
-  const box = { x: player.x, y: player.y, w: PLAYER.width, h: PLAYER.height };
+  const boxes = playerOffsets(player).map((dx) => ({ x: player.x + dx, y: player.y, w: PLAYER.width, h: PLAYER.height }));
   for (const p of state.platforms) {
     const item = p.item;
     if (!item || item.used || (item.kind !== 'propeller' && item.kind !== 'jetpack')) continue;
     const size = ITEMS[item.kind];
-    if (overlaps(box, { x: p.x + item.offset, y: p.y - size.height, w: size.width, h: size.height })) {
+    const itemBox = { x: p.x + item.offset, y: p.y - size.height, w: size.width, h: size.height };
+    if (boxes.some((box) => overlaps(box, itemBox))) {
       item.used = true;
       player.power = item.kind;
       player.powerTime = POWERS[item.kind].duration;
@@ -175,10 +182,11 @@ function monsterBox(m) {
 function hitMonsters(state, prevFeet) {
   const { player } = state;
   if (player.dead) return;
-  const box = { x: player.x + 8, y: player.y + 6, w: PLAYER.width - 16, h: PLAYER.height - 6 };
+  const boxes = playerOffsets(player)
+    .map((dx) => ({ x: player.x + dx + 8, y: player.y + 6, w: PLAYER.width - 16, h: PLAYER.height - 6 }));
   for (const m of state.monsters) {
-    if (m.dead || !overlaps(box, monsterBox(m))) continue;
-    if (player.power) {
+    if (m.dead || !boxes.some((box) => overlaps(box, monsterBox(m)))) continue;
+    if (player.power || player.grace > 0) {
       m.dead = true;
       state.events.push('monster');
     } else if (player.vy > 0 && prevFeet <= m.y + 14) {
@@ -269,11 +277,15 @@ function stepPlayer(state, direction, dt) {
   }
   player.cooldown = Math.max(0, player.cooldown - dt);
   player.shootTime = Math.max(0, player.shootTime - dt);
+  player.grace = Math.max(0, player.grace - dt);
 
   if (player.power) {
     player.powerTime -= dt;
     player.vy = -POWERS[player.power].speed;
-    if (player.powerTime <= 0) player.power = null;
+    if (player.powerTime <= 0) {
+      player.power = null;
+      player.grace = GRACE_TIME;
+    }
   } else {
     player.vy += GRAVITY * dt;
   }
