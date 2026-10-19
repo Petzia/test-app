@@ -1,15 +1,29 @@
-# Céleste + Doodle Jump Lite
+# Doodle Jump (PWA)
 
-Two small vanilla JavaScript apps served as a static site (GitHub Pages):
+A faithful Doodle Jump remake in vanilla JavaScript (canvas, ES modules, zero dependencies),
+installable as a Progressive Web App and playable offline on a phone.
 
-- **Céleste** (`/`): a light Co-Star–style astrology app, in French.
-  - Natal chart from birth date, time and place: Sun, Moon, Ascendant, planets in signs and
-    Whole Sign houses, retrogrades, major aspects, chart wheel, element balance.
-  - Daily personal transits for today and the next 6 days, Moon phase and mood.
-  - "Le ciel": current positions, retrograde planets, upcoming sign changes and stations (45 days).
-  - Compatibility (synastry) between two profiles with a 0–100 score and the strongest links.
-  - Profiles are stored in `localStorage` only. Two example profiles are preloaded.
-- **Doodle Jump Lite** (`/doodle/`): bounce from platform to platform.
+## Features
+
+- Graph-paper look, hand-drawn Doodler, wrap-around screen edges.
+- Platforms: green (static), blue (moving), brown (breaks, no bounce), white (vanishes after one jump).
+- Power-ups: spring, trampoline, propeller hat, jetpack.
+- Flying monsters: jump on them or shoot them; touching them from below or the side is fatal.
+- Difficulty grows with height (wider gaps, more moving/vanishing/breaking platforms, monsters).
+- Synthesized sound effects (Web Audio), best score saved locally, pause, French UI.
+
+## Controls
+
+- **Phone, tilt (default)**: tilt the phone to move, tap the screen to shoot toward your finger.
+  iOS asks for motion permission when you press "Jouer".
+- **Phone, touch**: hold the left/right half to move, tap the top quarter to shoot.
+- **Keyboard**: `←` `→` (or `A` `D`) to move, `Space`/`↑` to shoot, `P`/`Esc` to pause.
+
+## Install on a phone
+
+Open the GitHub Pages URL, then:
+- **iPhone (Safari)**: Share → "Sur l'écran d'accueil".
+- **Android (Chrome)**: menu ⋮ → "Installer l'application".
 
 ## Run locally
 
@@ -17,7 +31,7 @@ Two small vanilla JavaScript apps served as a static site (GitHub Pages):
 python3 -m http.server 8000   # or: npx serve
 ```
 
-Open http://localhost:8000 (Céleste) or http://localhost:8000/doodle/.
+Open http://localhost:8000. (Tilt controls need HTTPS on real phones; GitHub Pages provides it.)
 
 ## Tests
 
@@ -27,9 +41,5 @@ npm test   # node --test, no install needed
 
 ## Deployment
 
-Every push to `main` runs the tests and deploys `index.html`, `css/`, `js/` and `doodle/`
-to GitHub Pages (`.github/workflows/pages.yml`). Pages source must be **GitHub Actions**.
-
-## Project rules
-
-See `CLAUDE.md` and the agents in `.claude/agents/`.
+Every push to `main` runs the tests and deploys the static files to GitHub Pages
+(`.github/workflows/pages.yml`).

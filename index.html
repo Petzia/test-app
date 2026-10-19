@@ -2,38 +2,56 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src https://geocoding-api.open-meteo.com; base-uri 'none'; form-action 'none'">
-  <meta name="description" content="Céleste : ton thème astral, tes transits du jour et votre compatibilité.">
-  <title>Céleste — astrologie</title>
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; manifest-src 'self'; worker-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta name="description" content="Doodle Jump : saute de plateforme en plateforme, le plus haut possible.">
+  <meta name="theme-color" content="#f9f5e7">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Doodle Jump">
+  <title>Doodle Jump</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div class="stars" aria-hidden="true"></div>
-  <header class="top">
-    <h1><span aria-hidden="true">✦</span> Céleste</h1>
-    <div class="profile-bar">
-      <label class="sr-only" for="profile">Profil</label>
-      <select id="profile"></select>
-      <button id="edit-profile" type="button" class="secondary">Modifier</button>
-      <button id="add-profile" type="button" class="secondary" aria-label="Ajouter un profil">＋</button>
+  <main id="stage" class="stage">
+    <canvas id="game" tabindex="0" role="img" aria-label="Jeu Doodle Jump"></canvas>
+
+    <div id="hud" class="hud" hidden>
+      <span id="score" class="score" aria-live="off">0</span>
+      <div class="hud-buttons">
+        <button id="sound" type="button" class="icon-btn" aria-label="Couper le son">🔊</button>
+        <button id="pause" type="button" class="icon-btn" aria-label="Pause">⏸</button>
+      </div>
     </div>
-    <nav class="tabs" aria-label="Sections">
-      <button type="button" data-tab="today">Aujourd’hui</button>
-      <button type="button" data-tab="natal">Thème natal</button>
-      <button type="button" data-tab="destiny">Destinée</button>
-      <button type="button" data-tab="sky">Le ciel</button>
-      <button type="button" data-tab="compat">Compatibilité</button>
-    </nav>
-  </header>
-  <main id="view"></main>
-  <footer>
-    <p>Zodiaque tropical, maisons signes entiers. Calculs astronomiques avec astronomy-engine, directement dans ton navigateur.</p>
-    <p>Tes données de naissance restent sur cet appareil. <button id="reset" type="button" class="link">Effacer mes données</button></p>
-    <p><a href="doodle/">🎮 Jouer à Doodle Jump Lite</a></p>
-  </footer>
-  <dialog id="profile-dialog" aria-label="Profil"></dialog>
+
+    <section id="menu" class="screen">
+      <h1 class="title">doodle<br>jump</h1>
+      <button id="play" type="button" class="btn">Jouer</button>
+      <button id="control" type="button" class="btn secondary">Contrôle</button>
+      <p id="control-help" class="help"></p>
+      <p class="best">Record : <span id="menu-best">0</span></p>
+    </section>
+
+    <section id="paused" class="screen" hidden>
+      <h2 class="title small">pause</h2>
+      <button id="resume" type="button" class="btn">Reprendre</button>
+      <button id="quit" type="button" class="btn secondary">Menu</button>
+    </section>
+
+    <section id="gameover" class="screen" hidden>
+      <h2 class="title small">game over!</h2>
+      <p class="result">Score : <strong id="over-score">0</strong></p>
+      <p class="result">Record : <strong id="over-best">0</strong></p>
+      <p id="new-record" class="record" hidden>🎉 Nouveau record !</p>
+      <button id="again" type="button" class="btn">Rejouer</button>
+      <button id="to-menu" type="button" class="btn secondary">Menu</button>
+    </section>
+  </main>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>
